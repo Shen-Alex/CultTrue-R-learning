@@ -1,0 +1,339 @@
+---
+title: "Class one for biometrics"
+author: "Alex Shen"
+date: "2022/7/13"
+output: html_document
+---
+
+---
+title: "An Introduction to R for Jixing Biometrics"
+author: "Alex Shen"
+date: '2022-07-13'
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R learning vision
+
+All for the purpose of use in our work, i.e., in **data management**, **medical monitoring**, and **statistical programming**.
+
+-   We can use it for our actual work;
+-   Or use it as a tool to monitor the work we outsourced to CRO
+
+### A bar chart use case
+
+Here is the youtube video worth looking<https://www.youtube.com/watch?v=TN10L3QrBXQ&t=940s>
+
+
+*Create mean Sepal.length for each species*
+```{r}
+library(dplyr)
+data <- iris %>% 
+  group_by(Species) %>% 
+  summarize(
+    mean_Sepal.Length = mean(Sepal.Length),
+    .groups = "drop"
+  )
+```
+
+
+*Static visualization by ggplot*
+```{r}
+library(ggplot2)
+data |>
+  ggplot(
+    aes(x = Species,
+        y = mean_Sepal.Length)
+  ) +
+  geom_bar(stat = "identity")
+```
+
+Interactive visualization via plotly
+
+```{r}
+library(plotly) 
+data %>% 
+  plot_ly(
+    x=~Species,
+    y=~mean_Sepal.Length,
+    type = "bar"
+  )
+```
+
+Interactive visualization via echarts4r. A bar chart with tooltip trigger of "item".
+```{r}
+library(echarts4r)
+
+data %>% 
+  e_charts( x = Species ) %>% 
+  e_bar(serie = mean_Sepal.Length) %>% 
+  e_tooltip(trigger = "item")
+```
+
+### A line chart use case in echarts4r
+
+```{r}
+dates<-seq.Date(
+  from = as.Date("2021-01-01"),
+  by = "day",
+  length.out = nrow(iris)/3
+  )
+  
+data <-iris %>% 
+  mutate(
+    Date = rep(dates,3)
+    ) %>% 
+  select(Date, Petal.Width, Species)
+```
+
+```{r}
+data %>% 
+  group_by(Species) %>% 
+  e_charts(x = Date) %>% 
+  e_line(serie = Petal.Width) %>% 
+  e_tooltip(trigger = "axis")
+```
+
+
+### Statistical programming use case (gtsummary)
+
+#### Step 1 Loading simulated trial data
+
+```{r loading package/data}
+library(tidyverse)
+library(gtsummary)
+data(trial)
+```
+
+#### Step 2 Select 4 variables to form a small dataset
+
+```{r}
+sm_trial <- trial %>% 
+  select(trt, age, grade, response) 
+```
+
+Age density comparison between two groups
+```{r}
+trial %>% drop_na(age) %>% 
+ggplot(aes(x=age, col = trt)) + geom_density()+
+  theme_bw()+
+  theme(panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank())
+```
+
+Mean and SD for each group
+```{r}
+trial %>%  
+  group_by(trt) %>% 
+  summarize(avg.age = mean(age, na.rm = T), sd=sd(age,na.rm=T),count = n())
+```
+
+Relationship between 2 categorical variables
+```{r}
+trial %>%
+  drop_na(response) %>% 
+  ggplot(aes(x = trt, fill = factor(response))) +
+  geom_bar(position = "fill",alpha = 0.5)
+```
+
+
+Relation of of one numerical and two categorical variable
+```{r}
+ggplot(trial, aes(x = trt, y = age, fill = stage)) +
+  geom_boxplot()
+```
+
+Journal level presentation of data in table
+
+table 1 with 1 group
+
+
+```{r}
+sm_trial <- trial %>% 
+  select(trt, age, grade, response) 
+
+tbl_summary1 <- sm_trial %>% 
+  select(-trt) %>% 
+  tbl_summary()
+
+tbl_summary1
+  
+```
+"Table 1" with 2 groups
+
+```{r}
+sm_trial <- trial %>% 
+  select(trt, age, grade, response) 
+
+tbl_summary2 <- sm_trial %>% 
+  tbl_summary(
+    by = trt,
+    statistic = response ~ "{n}/{N}({p}%)",
+    label = grade ~ "Pathologic tumor grade",
+    digits = age ~ 2
+  )
+
+tbl_summary2
+  
+```
+
+
+```{r}
+sm_trial <- trial %>% 
+  select(trt, age, grade, response) 
+
+tbl_summary3 <- sm_trial %>% 
+  tbl_summary(
+    by = trt,
+    statistic = list(all_continuous() ~ "{mean}({sd})",
+                     response ~ "{n}/{N}({p}%)"),
+    label = list(grade ~ "Pathologic tumor grade", age ~ "Patient age(year)"),
+    digits = age ~ 2
+  )
+
+tbl_summary3
+  
+```
+
+
+```{r}
+sm_trial <- trial %>% 
+  select(trt, age, grade, response) 
+
+tbl_summary4 <- sm_trial %>% 
+  tbl_summary(
+    by = trt,
+    statistic = list(all_continuous() ~ "{mean}({sd})",
+                     response ~ "{n}/{N}({p}%)"),
+    label = list(grade ~ "Pathologic tumor grade", age ~ "Patient age(year)"),
+    digits = age ~ 2
+  ) %>% 
+  add_p()
+  
+
+tbl_summary4
+  
+```
+
+
+
+```{r}
+sm_trial <- trial %>% 
+  select(trt, age, grade, response) 
+
+tbl_summary4 <- sm_trial %>% 
+  tbl_summary(
+    by = trt,
+    statistic = list(all_continuous() ~ "{mean}({sd})",
+                     response ~ "{n}/{N}({p}%)"),
+    label = list(grade ~ "Pathologic tumor grade", age ~ "Patient age(year)"),
+    digits = age ~ 2
+  ) %>% 
+  add_p()
+  
+
+tbl_summary4
+  
+```
+
+
+```{r}
+sm_trial <- trial %>% 
+  select(trt, age, grade, response) 
+
+tbl_summary5 <- sm_trial %>% 
+  tbl_summary(
+    by = trt,
+    missing = "no",
+  ) %>% 
+  add_p() %>% 
+  add_overall() %>% 
+  add_n() %>% 
+  add_stat_label(
+    label = all_categorical() ~ "n/N(%)"
+  )
+  
+
+tbl_summary5
+  
+```
+
+
+
+
+```{r}
+sm_trial <- trial %>% 
+  select(trt, age, grade, response) 
+
+tbl_summary6 <- sm_trial %>% 
+  tbl_summary(
+    by = trt,
+    missing = "no",
+  ) %>% 
+  add_p() %>% 
+  add_overall() %>% 
+  add_n() %>% 
+  add_stat_label(
+    label = all_categorical() ~ "n/N(%)"
+  ) %>% 
+  bold_labels() %>% 
+  italicize_levels() %>% 
+  bold_p(t = 0.8)
+  
+
+tbl_summary6
+  
+```
+
+
+
+```{r}
+
+iris %>% 
+    group_by(Species) %>% 
+    mutate(Count = n()) %>%
+    group_by(Species, Count) %>%
+    summarize_at(vars(), funs(mean, sd))
+```
+
+
+
+
+
+
+
+
+
+ 
+```{r looking data}
+trial
+```
+
+## Learning machanism
+
+-   Recommend to watch video first, take shared learning the second, and do the assignment and practice the next.
+-   Teacher and Learners switch approach to speed up learning, fine-tuned to what matters, and promote dicussion and brainstorming
+-   Goal is to use it in 2 months? for Nadia to use it for data cleaning first, and Shenglin to compare table generation in SAS and R.
+-   Gathered together every week? or 2 weeks?
+
+## Some of topics relevant to us(Our sylabus)
+
+-   Understand and use R studio
+-   Import data into R: read.csv, read_csv from readr, read_sas from haven
+-   Perform data manipulation using dpyr and tidyr packages
+-   Static and interactive visulization using ggplot2, plotly, and echart4r
+-   Table generation using gt, dt, gtsummary et al.
+-   R shiny dashboard using flexdashboard and shinydashboard
+
+## Some of the useful resource for R learning
+
+-   In R studio help
+-   Online books
+    -   [Data Visualization](https://rkabacoff.github.io/datavis/)
+    -   [R blogger](https://www.r-bloggers.com/)
+    -   [R for Data Science](https://r4ds.had.co.nz/)
